@@ -1,0 +1,50 @@
+# Team
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**key** | **string** |  | [optional] 
+**team_id** | **int** |  | [optional] 
+**player_id** | **int** |  | [optional] 
+**city** | **string** |  | [optional] 
+**name** | **string** |  | [optional] 
+**conference** | **string** |  | [optional] 
+**division** | **string** |  | [optional] 
+**full_name** | **string** |  | [optional] 
+**stadium_id** | **int** |  | [optional] 
+**bye_week** | **int** |  | [optional] 
+**average_draft_position** | **float** |  | [optional] 
+**average_draft_position_ppr** | **float** |  | [optional] 
+**head_coach** | **string** |  | [optional] 
+**offensive_coordinator** | **string** |  | [optional] 
+**defensive_coordinator** | **string** |  | [optional] 
+**special_teams_coach** | **string** |  | [optional] 
+**offensive_scheme** | **string** |  | [optional] 
+**defensive_scheme** | **string** |  | [optional] 
+**upcoming_salary** | **int** |  | [optional] 
+**upcoming_opponent** | **string** |  | [optional] 
+**upcoming_opponent_rank** | **int** |  | [optional] 
+**upcoming_opponent_position_rank** | **int** |  | [optional] 
+**upcoming_fan_duel_salary** | **int** |  | [optional] 
+**upcoming_draft_kings_salary** | **int** |  | [optional] 
+**upcoming_yahoo_salary** | **int** |  | [optional] 
+**primary_color** | **string** |  | [optional] 
+**secondary_color** | **string** |  | [optional] 
+**tertiary_color** | **string** |  | [optional] 
+**quaternary_color** | **string** |  | [optional] 
+**wikipedia_logo_url** | **string** |  | [optional] 
+**wikipedia_word_mark_url** | **string** |  | [optional] 
+**global_team_id** | **int** |  | [optional] 
+**draft_kings_name** | **string** |  | [optional] 
+**draft_kings_player_id** | **int** |  | [optional] 
+**fan_duel_name** | **string** |  | [optional] 
+**fan_duel_player_id** | **int** |  | [optional] 
+**fantasy_draft_name** | **string** |  | [optional] 
+**fantasy_draft_player_id** | **int** |  | [optional] 
+**yahoo_name** | **string** |  | [optional] 
+**yahoo_player_id** | **int** |  | [optional] 
+**stadium_details** | [**\Acme\FantasyDataStats\\Stadium**](Stadium.md) |  | [optional] 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

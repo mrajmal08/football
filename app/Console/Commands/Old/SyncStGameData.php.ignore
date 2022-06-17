@@ -1,0 +1,299 @@
+<?php
+
+namespace App\Console\Commands;
+
+
+use Illuminate\Console\Command;
+use App\Models\FantasyData\FantasyPlayer;
+use App\Models\FantasyData\TeamGame;
+use Helper;
+
+class SyncStGameData extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'SyncStGameData {--team} {--all} {--week=0} {--year=0} {--isProjection}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description';
+
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
+    $systemSettings		= Helper::getSystemSettingsDetails();
+		$weekPrompt 		= $this->option('week');
+		$allPrompt 			= $this->option('all');
+		$isProjection 		= $this->option('isProjection');
+		$year 			    = $this->option('year');
+		$teamPrompt 			= $this->option('team');
+
+		$this->info('SYNC ST for specific team: '. $teamPrompt);
+		try {
+			
+			$season			=	(!empty($year))?$year:$systemSettings['season'];	//$season contains the season year we want in query below
+			$seasonType		=	$systemSettings['season_type'];			
+
+			//Set default to be current system settings week
+			$weekStart = $systemSettings['week'];
+			$weekLimit = $weekStart;
+
+			//Now check for specific params that might be passed
+			if($weekPrompt > 0){
+				$weekStart = $weekPrompt;
+				$weekLimit = $weekStart;
+			}
+
+			//Finally check for all
+			if($allPrompt){
+				$weekStart = 1;     //Start with week 1
+				$weekLimit = 17;    //Go all the way to week 17
+			}
+
+			for($week=$weekStart;$week<=$weekLimit;$week++){
+  					$count = 0;
+
+  			if($teamPrompt)
+  				$fantasy_player			=	FantasyPlayer::where('position','ST')->where('team', $teamPrompt)->get();
+  			else
+					$fantasy_player			=	FantasyPlayer::where('position','ST')->get();
+
+					// FantasyPlayer::where('position','ST')->chunk(2, function ($fantasy_player)use($count,$season,$week,$seasonType,$isProjection) {					
+					// $count = $count + count($fantasy_player); 					
+					
+						
+			//	$fantasy_player			=	FantasyPlayer::where('position','ST')->get();
+				
+				if(!empty($fantasy_player)){ 
+					$alertLine = class_basename(get_class($this)) . " |  Season: ".$season." | SeasonType: ".$seasonType." | Week: ". $week ."\r\n";
+					echo $alertLine;
+					
+					foreach($fantasy_player as $list){
+						$team_games = TeamGame::where('season_type',$seasonType)->where('season',$season)->where('week',$week)
+						->where('team',$list->team)->first();
+						
+						if(!empty($team_games['game_key'])){
+							$player_games_data	=	[];
+							$player_games_data=[
+								'game_key'							    => $team_games['game_key'],
+								'player_id'							    => $list->player_id,
+								'season_type'							=> $seasonType,
+								'season'							    => $season,
+								'game_date'							    => $team_games['date'],
+								'week'							        => $week,
+								'team'							        => $team_games['team'],
+								'opponent'							    => $team_games['opponent'],
+								'home_or_away'							=> $team_games['home_or_away'],
+								'number'								=> $team_games['number'],
+								'name'									=> $list->name,
+								'position'								=> 'ST',
+								'position_category'						=> 'ST',
+								'activated'								=> 1,
+								'played'								=> 1,
+								'started'								=> 1,
+								// 'passing_attempts'						=> $team_games['passing_attempts'],
+								// 'passing_completions'					=> $team_games['passing_completions'],
+								// 'passing_yards'							=> $team_games['passing_yards'],
+								// 'passing_completion_percentage'			=> $team_games['passing_completion_percentage'],
+								// 'passing_yards_per_attempt'				=> $team_games['passing_yards_per_attempt'],
+								// 'passing_yards_per_completion'			=> $team_games['passing_yards_per_completion'],
+								// 'passing_touchdowns'					=> $team_games['passing_touchdowns'],
+								// 'passing_interceptions'					=> $team_games['passing_interceptions'],
+								// 'passing_rating'						=> $team_games['passing_rating'],
+								// 'passing_long'							=> $team_games['passing_long'],
+								// 'passing_sacks'						    => $team_games['passing_sacks'],
+								// 'passing_sack_yards'					=> $team_games['passing_sack_yards'],
+								// 'rushing_attempts'						=> $team_games['rushing_attempts'],
+								// 'rushing_yards'							=> $team_games['rushing_yards'],
+								// 'rushing_yards_per_attempt'			    => $team_games['rushing_yards_per_attempt'],
+								// 'rushing_touchdowns'					=> $team_games['rushing_touchdowns'],
+								// 'rushing_long'							=> $team_games['rushing_long'],
+								// 'receiving_targets'						=> $team_games['receiving_targets'],
+								// 'receptions'							=> $team_games['receptions'],
+								// 'receiving_yards'						=> $team_games['receiving_yards'],
+								// 'receiving_yards_per_reception'			=> $team_games['receiving_yards_per_reception'],
+								// 'receiving_touchdowns'					=> $team_games['receiving_touchdowns'],
+								// 'receiving_long'						=> $team_games['receiving_long'],
+								// 'fumbles'								=> $team_games['fumbles'],
+								// 'fumbles_lost'							=> $team_games['fumbles_lost'],
+								'punt_returns'							=> $team_games['punt_returns'],
+								'punt_return_yards'						=> $team_games['punt_return_yards'],
+								'punt_return_yards_per_attempt'			=> 0,																				//Calculate below
+								'punt_return_touchdowns'				=> $team_games['punt_return_touchdowns'],
+								'punt_return_long'						=> $team_games['punt_return_long'],
+								'kick_returns'							=> $team_games['kick_returns'],
+								'kick_return_yards'						=> $team_games['kick_return_yards'],
+								'kick_return_yards_per_attempt'			=> 0,																				//Calculate below
+								'kick_return_touchdowns'				=> $team_games['kick_return_touchdowns'],
+								'kick_return_long'						=> $team_games['kick_return_long'],
+								// 'solo_tackles'							=> $team_games['solo_tackles'],
+								// 'assisted_tackles'						=> $team_games['assisted_tackles'],
+								// 'tackles_for_loss'						=> $team_games['tackles_for_loss'],
+								// 'sacks'									=> $team_games['sacks'],
+								// 'sack_yards'							=> $team_games['sack_yards'],
+								// 'quarterback_hits'						=> $team_games['quarterback_hits'],
+								// 'passes_defended'						=> $team_games['passes_defended'],
+								// 'fumbles_forced'						=> $team_games['fumbles_forced'],
+								// 'fumbles_recovered'						=> $team_games['fumbles_recovered'],
+								// 'fumble_return_yards'					=> $team_games['fumble_return_yards'],
+								// 'fumble_return_touchdowns'				=> $team_games['fumble_return_touchdowns'],
+								// 'interceptions'							=> $team_games['interceptions'],
+								// 'interception_return_yards'				=> $team_games['interception_return_yards'],
+								// 'interception_return_touchdowns'		=> $team_games['interception_return_touchdowns'],
+								// 'blocked_kicks'							=> $team_games['blocked_kicks'],
+								'special_teams_solo_tackles'			=> $team_games['special_teams_solo_tackles'],
+								'special_teams_assisted_tackles'		=> $team_games['special_teams_assisted_tackles'],
+								// 'misc_solo_tackles'						=> $team_games['misc_solo_tackles'],
+								// 'misc_assisted_tackles'					=> $team_games['misc_assisted_tackles'],
+								'punts'									=> $team_games['punts'],
+								'punt_yards'							=> $team_games['punt_yards'],
+								'punt_average'							=> $team_games['punt_average'],
+								'field_goals_attempted'					=> $team_games['field_goals_attempted'],
+								'field_goals_made'						=> $team_games['field_goals_made'],
+								'field_goals_longest_made'				=> $team_games['field_goals_longest_made'],
+								'extra_points_made'						=> $team_games['extra_points_made'],
+								// 'two_point_conversion_passes'			=> $team_games['two_point_conversion_passes'],
+								// 'two_point_conversion_runs'				=> $team_games['two_point_conversion_runs'],
+								// 'two_point_conversion_receptions'		=> $team_games['two_point_conversion_receptions'],
+								// 'fantasy_points'						=> $team_games['fantasy_points'],
+								// 'fantasy_points_ppr'					=> 0,
+								// 'reception_percentage'					=> $team_games['reception_percentage'],
+								// 'receiving_yards_per_target'			=> $team_games['receiving_yards_per_target'],
+								// 'tackles'								=> $team_games['tackles'],
+								// 'offensive_touchdowns'					=> $team_games['offensive_touchdowns'],
+								// 'defensive_touchdowns'					=> $team_games['defensive_touchdowns'],
+								'special_teams_touchdowns'				=> $team_games['special_teams_touchdowns'],
+								// 'touchdowns'							=> $team_games['touchdowns'],
+								'fantasy_position'						=> $team_games['fantasy_position'],
+								'field_goal_percentage'					=> $team_games['field_goal_percentage'],
+								'player_game_id'						=> 0,
+								// 'fumbles_own_recoveries'				=> $team_games['fumbles_own_recoveries'],
+								// 'fumbles_out_of_bounds'					=> $team_games['fumbles_out_of_bounds'],
+								'kick_return_fair_catches'				=> $team_games['kick_return_fair_catches'],
+								'punt_return_fair_catches'				=> $team_games['punt_return_fair_catches'],
+								'punt_touchbacks'						=> $team_games['punt_touchbacks'],
+								'punt_inside20'							=> $team_games['punt_inside20'],
+								'extra_points_attempted'				=> $team_games['extra_points_attempted'],
+								'blocked_kick_return_touchdowns'		=> $team_games['blocked_kick_return_touchdowns'],
+								'field_goal_return_touchdowns'			=> $team_games['field_goal_return_touchdowns'],
+								// 'safeties'								=> $team_games['safeties'],
+								'field_goals_had_blocked'				=> $team_games['field_goals_had_blocked'],
+								'extra_points_had_blocked'				=> $team_games['extra_points_had_blocked'],
+								'punt_long'								=> $team_games['punt_long'],
+								'blocked_kick_return_yards'				=> $team_games['blocked_kick_return_yards'],
+								'field_goal_return_yards'				=> $team_games['field_goal_return_yards'],
+								'punt_net_yards'						=> $team_games['punt_net_yards'],
+								'special_teams_fumbles_forced'			=> $team_games['special_teams_fumbles_forced'],
+								'special_teams_fumbles_recovered'		=> $team_games['special_teams_fumbles_recovered'],
+								// 'misc_fumbles_forced'					=> $team_games['misc_fumbles_forced'],
+								// 'misc_fumbles_recovered'				=> $team_games['misc_fumbles_recovered'],
+								'short_name'							=> $team_games['short_name'],
+								'playing_surface'						=> $team_games['playing_surface'],
+								'is_game_over'							=> $team_games['is_game_over'],
+								'safeties_allowed'						=> $team_games['safeties_allowed'],
+								'stadium'								=> $team_games['stadium'],
+								'temperature'							=> $team_games['temperature'],
+								'humidity'								=> $team_games['humidity'],
+								'wind_speed'							=> $team_games['wind_speed'],
+								'fan_duel_salary'						=> $team_games['fan_duel_salary'],
+								'draft_kings_salary'					=> $team_games['draft_kings_salary'],
+								'fantasy_data_salary'					=> $team_games['fantasy_data_salary'],
+								// 'offensive_snaps_played'				=> $team_games['offensive_snaps_played'],
+								// 'defensive_snaps_played'				=> $team_games['defensive_snaps_played'],
+								'special_teams_snaps_played'			=> $team_games['special_teams_snaps_played'],
+								// 'offensive_team_snaps'					=> $team_games['offensive_team_snaps'],
+								// 'defensive_team_snaps'					=> $team_games['defensive_team_snaps'],
+								'special_teams_team_snaps'				=> $team_games['special_teams_team_snaps'],
+								'victiv_salary'						    => $team_games['victiv_salary'],
+								// 'two_point_conversion_returns'			=> $team_games['two_point_conversion_returns'],
+								'fantasy_points_fan_duel'				=> $team_games['fantasy_points_fan_duel'],
+								'field_goals_made0to19'					=> $team_games['field_goals_made0to19'],
+								'field_goals_made20to29'				=> $team_games['field_goals_made20to29'],
+								'field_goals_made30to39'				=> $team_games['field_goals_made30to39'],
+								'field_goals_made40to49'				=> $team_games['field_goals_made40to49'],
+								'field_goals_made50_plus'				=> $team_games['field_goals_made50_plus'],
+								'fantasy_points_draft_kings'			=> $team_games['fantasy_points_draft_kings'],
+								'yahoo_salary'							=> $team_games['yahoo_salary'],
+								'fantasy_points_yahoo'					=> $team_games['fantasy_points_yahoo'],
+								'injury_status'							=> $team_games['injury_status'],
+								 'injury_body_part'						=> $team_games['injury_body_part'],
+								'injury_start_date'						=> $team_games['injury_start_date'],
+								'injury_notes'							=> $team_games['injury_notes'],
+								'fan_duel_position'						=> $team_games['fan_duel_position'],
+								'draft_kings_position'					=> $team_games['draft_kings_position'],
+								'yahoo_position'						=> $team_games['yahoo_position'],
+								'opponent_rank'							=> $team_games['opponent_rank'],
+								'opponent_position_rank'				=> $team_games['opponent_position_rank'],
+								'injury_practice'						=> $team_games['injury_practice'],
+								'injury_practice_description'			=> $team_games['injury_practice_description'],
+								'declared_inactive'						=> $team_games['declared_inactive'],
+								'fantasy_draft_salary'					=> $team_games['fantasy_draft_salary'],
+								'fantasy_draft_position'				=> $team_games['fantasy_draft_position'],
+								'team_id'								=> $team_games['team_id'],
+								'opponent_id'							=> $team_games['opponent_id'],
+								'day'									=> $team_games['day'],
+								'date_time'								=> $team_games['date_time'],
+								'global_game_id'						=> $team_games['global_game_id'],
+								'global_team_id'						=> $team_games['global_team_id'],
+								'global_opponent_id'					=> $team_games['global_opponent_id'],
+								'score_id'								=> $team_games['score_id'],
+								'fantasy_points_fantasy_draft'			=> $team_games['fantasy_points_fantasy_draft'],
+								'scoring_details'						=> $team_games['scoring_details'],
+							];
+
+							if($team_games['punt_returns'] > 0)
+								$player_games_data['punt_return_yards_per_attempt'] = ($team_games['punt_return_yards'] / $team_games['punt_returns']);
+
+							if($team_games['kick_returns'] > 0)
+								$player_games_data['kick_return_yards_per_attempt'] = ($team_games['kick_return_yards'] / $team_games['kick_returns']);
+							
+							if($isProjection){
+								\App\Models\FantasyData\PlayerGameProjection::updateOrCreate(
+									['game_key'   => $team_games['game_key'],'player_id'   => $list->player_id,'position'   => 'ST'
+									,'week'   => $week, 'season'   => $season,'season_type'   => $seasonType],
+									$player_games_data
+								);
+								echo "SyncSTGameData ST Player Game Projection added successfully\r\n";
+							}
+							else {
+								\App\Models\FantasyData\PlayerGame::updateOrCreate(
+									['game_key'   => $team_games['game_key'],'player_id'   => $list->player_id,'position'   => 'ST'
+									,'week'   => $week, 'season'   => $season,'season_type'   => $seasonType],
+									$player_games_data
+								);
+								echo "SyncSTGameData ST Player Game added successfully\r\n";
+							}
+							unset($player_games_data);
+							unset($team_games);
+							Helper::calculateFantasyPlayerGameFantasyPoints($week,$season,$seasonType,$list->player_id,$isProjection);
+						}
+					}
+					unset($fantasy_player);
+				 }
+				// });
+			}
+		}catch(Exception $e){
+  			echo 'Exception when calling api: ', $e->getMessage(), PHP_EOL;
+  		}
+    }
+}
